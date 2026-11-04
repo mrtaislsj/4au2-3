@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>OSRS: Lair of the King Black Dragon</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #080604;
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      color: #ffff00;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: none;
+      text-shadow: 2px 2px #000;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px;
+    }
+
+    /* Top HUD */
+    .rpg-hud {
+      width: 100%;
+      background: #2b2219;
+      border: 4px solid #534537;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.68rem;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.85);
+    }
+
+    .hud-gear { color: #38bdf8; }
+    .hud-dragon {
+      color: #ef4444;
+      animation: pulseAlert 1.5s infinite;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* 11 Equipment Inventory Belt */
+    .gear-belt {
+      width: 100%;
+      background: #17120c;
+      border: 3px solid #382e24;
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .gear-label {
+      font-size: 0.6rem;
+      color: #facc15;
+      white-space: nowrap;
+      margin-right: 4px;
+    }
+
+    .gear-slot {
+      width: 34px;
+      height: 34px;
+      background: #2b2219;
+      border: 2px solid #534537;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      opacity: 0.25;
+      transition: all 0.2s ease;
+    }
+
+    .gear-slot.unlocked {
+      opacity: 1;
+      border-color: #facc15;
+      background: #423528;
+      box-shadow: 0 0 8px #eab308;
+    }
+
+    /* Canvas Frame */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 460px;
+      background: #000;
+      border: 5px solid #382e24;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Screen Shakes & Flashes */
+    .screen-shake {
+      animation: shakeScreenAnim 0.4s ease-in-out;
+    }
+
+    @keyframes shakeScreenAnim {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      15% { transform: translate(-10px, 8px) rotate(-1.5deg); }
+      30% { transform: translate(10px, -8px) rotate(2deg); }
+      45% { transform: translate(-8px, -5px) rotate(-1deg); }
+      60% { transform: translate(8px, 8px) rotate(1.5deg); }
+      80% { transform: translate(-4px, 3px) rotate(0deg); }
+    }
+
+    .screen-flash-red {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(220, 38, 38, 0.7);
+      pointer-events: none;
+      z-index: 55;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+
+    .screen-flash-red.active {
+      opacity: 1;
+    }
+
+    /* Quiz Modal */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 9, 7, 0.94);
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      z-index: 50;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .battle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #2e261f;
+      border: 3px solid #534537;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.65rem;
+      color: #ff981f;
+    }
+
+    .enemy-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #231c15;
+      border: 3px solid #382e24;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin: 6px 0;
+    }
+
+    .enemy-avatar {
+      width: 52px;
+      height: 52px;
+      background: #14100b;
+      border: 2px solid #facc15;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .enemy-info { flex: 1; }
+
+    .enemy-name {
+      font-size: 0.72rem;
+      color: #00ffff;
+      margin-bottom: 4px;
+    }
+
+    .enemy-reward {
+      font-size: 0.58rem;
+      color: #4ade80;
+      margin-bottom: 6px;
+    }
+
+    .question-box {
+      font-size: 0.7rem;
+      line-height: 1.55;
+      color: #ffffff;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .choice-btn {
+      font-family: inherit;
+      background: #504437;
+      color: #fffe9e;
+      border: 3px solid #73614e;
+      border-radius: 6px;
+      padding: 10px 8px;
+      font-size: 0.64rem;
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.4;
+      box-shadow: 0 4px #231a12;
+      text-shadow: 2px 2px #000;
+    }
+
+    .choice-btn:active:not([disabled]) {
+      transform: translateY(2px);
+      box-shadow: 0 2px #231a12;
+    }
+
+    .choice-btn.correct {
+      background: #15803d !important;
+      border-color: #22c55e !important;
+      color: #ffffff !important;
+    }
+
+    .choice-btn.wrong {
+      background: #b91c1c !important;
+      border-color: #ef4444 !important;
+      color: #fca5a5 !important;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .explanation-card {
+      display: none;
+      background: #1c1610;
+      border: 3px dashed #facc15;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.62rem;
+      line-height: 1.5;
+      color: #fed7aa;
+      margin-top: 4px;
+    }
+
+    .action-confirm-btn {
+      font-family: inherit;
+      display: none;
+      width: 100%;
+      background: #8b2500;
+      color: #ffffff;
+      border: 3px solid #b23a0d;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      box-shadow: 0 4px #4a1200;
+      margin-top: 6px;
+      text-shadow: 2px 2px #000;
+    }
+
+    .action-confirm-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px #4a1200;
+    }
+
+    /* KBD Refusal Dialogue */
+    .dragon-dialog {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      background: #2b1414;
+      border: 4px solid #dc2626;
+      border-radius: 8px;
+      padding: 14px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 45;
+      box-shadow: 0 0 16px rgba(220, 38, 38, 0.7);
+    }
+
+    .dragon-dialog-title {
+      color: #ef4444;
+      font-size: 0.75rem;
+    }
+
+    .dragon-dialog-text {
+      color: #ffffff;
+      font-size: 0.65rem;
+      line-height: 1.5;
+    }
+
+    /* DRAMATIC BOSS FIGHT ARENA */
+    .boss-arena {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #350808 0%, #0d0202 100%);
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+      z-index: 60;
+    }
+
+    .boss-arena.active {
+      display: flex;
+    }
+
+    .boss-hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.85);
+      border: 3px solid #dc2626;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.65rem;
+    }
+
+    .hp-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hp-bar-outer {
+      width: 130px;
+      height: 14px;
+      background: #450a0a;
+      border: 2px solid #ffffff;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hp-bar-inner {
+      height: 100%;
+      width: 100%;
+      background: #22c55e;
+      transition: width 0.25s ease;
+    }
+
+    .boss-combat-stage {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      overflow: hidden;
+    }
+
+    .combatant-hero {
+      font-size: 3.6rem;
+      filter: drop-shadow(0 0 10px #38bdf8);
+      transition: transform 0.15s ease;
+      position: relative;
+    }
+
+    .combatant-hero.strike {
+      transform: translateX(110px) scale(1.2);
+    }
+
+    .combatant-hero.burned {
+      animation: heroBurnedAnim 0.5s ease;
+    }
+
+    @keyframes heroBurnedAnim {
+      0%, 100% { filter: brightness(1) drop-shadow(0 0 10px #38bdf8); transform: translateX(0); }
+      25% { filter: brightness(3.5) drop-shadow(0 0 25px #ff0000); transform: translateX(-18px); }
+      50% { filter: brightness(2) drop-shadow(0 0 35px #ea580c); transform: translateX(12px); }
+    }
+
+    /* KBD Authentic Render Container */
+    .kbd-boss-wrapper {
+      position: relative;
+      width: 250px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease;
+    }
+
+    .kbd-boss-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.85));
+      animation: kbdHover 2.2s infinite ease-in-out;
+    }
+
+    @keyframes kbdHover {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.03); }
+    }
+
+    .kbd-boss-wrapper.strike {
+      transform: translateX(-80px) scale(1.25);
+    }
+
+    .kbd-boss-wrapper.hurt {
+      animation: kbdHurtAnim 0.35s ease;
+    }
+
+    @keyframes kbdHurtAnim {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.92) translateX(20px); filter: brightness(3) drop-shadow(0 0 35px #ffffff); }
+    }
+
+    /* Hitsplats */
+    .hitsplat {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: bold;
+      animation: hitFloat 0.85s forwards ease-out;
+      pointer-events: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.85);
+      z-index: 80;
+    }
+
+    .hitsplat.red { background: #dc2626; }
+    .hitsplat.green { background: #16a34a; }
+
+    @keyframes hitFloat {
+      0% { transform: scale(0.3) translateY(0); opacity: 0; }
+      40% { transform: scale(1.25) translateY(-20px); opacity: 1; }
+      100% { transform: scale(1) translateY(-50px); opacity: 0; }
+    }
+
+    /* Battle Actions Toolbar */
+    .boss-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .combat-action-btn {
+      font-family: inherit;
+      background: #7f1d1d;
+      border: 3px solid #ef4444;
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 12px 4px;
+      font-size: 0.62rem;
+      cursor: pointer;
+      text-shadow: 2px 2px #000;
+      box-shadow: 0 4px #450a0a;
+    }
+
+    .combat-action-btn:active:not([disabled]) {
+      transform: translateY(2px);
+      box-shadow: 0 2px #450a0a;
+    }
+
+    .combat-action-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* OSRS DRAMATIC DEATH SCREEN */
+    .death-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 0, 0, 0.96);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      z-index: 90;
+      animation: deathFade 1.2s forwards;
+    }
+
+    .death-screen.active {
+      display: flex;
+    }
+
+    @keyframes deathFade {
+      0% { background: rgba(220, 38, 38, 0.95); }
+      100% { background: rgba(10, 0, 0, 0.96); }
+    }
+
+    /* Victory Modal */
+    .victory-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 9, 7, 0.96);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      z-index: 70;
+    }
+
+    .victory-screen.active {
+      display: flex;
+    }
+
+    /* On-Screen Touch Controller */
+    .controls-panel {
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px 4px 18px;
+      margin-top: 6px;
+    }
+
+    .dpad-container {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 4px;
+    }
+
+    .dpad-btn {
+      background: #3b2d20;
+      border: 3px solid #63503b;
+      border-radius: 8px;
+      color: #facc15;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px #1c150e;
+      touch-action: none;
+    }
+
+    .dpad-btn:active {
+      background: #4d3c2b;
+      transform: translateY(2px);
+      box-shadow: 0 2px #1c150e;
+    }
+
+    .dpad-empty {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      pointer-events: none;
+    }
+
+    .actions-container {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .touch-action-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-shadow: 1px 1px #000;
+      touch-action: none;
+    }
+
+    .btn-a {
+      background: #15803d;
+      border-color: #22c55e;
+      box-shadow: 0 5px #14532d;
+    }
+
+    .btn-b {
+      background: #b91c1c;
+      border-color: #ef4444;
+      box-shadow: 0 5px #7f1d1d;
+    }
+
+    @media (max-width: 640px) {
+      .dpad-container {
+        grid-template-columns: repeat(3, 48px);
+        grid-template-rows: repeat(3, 48px);
+      }
+      .touch-action-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 0.85rem;
+      }
+      .question-box { font-size: 0.62rem; }
+      .choice-btn { font-size: 0.58rem; padding: 8px 6px; }
+      .rpg-hud { font-size: 0.6rem; }
+      .kbd-boss-wrapper { width: 170px; height: 130px; }
+      .combatant-hero { font-size: 2.8rem; }
+      .hp-bar-outer { width: 95px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-wrapper">
+
+    <!-- TOP HUD -->
+    <div class="rpg-hud">
+      <span style="color:#facc15;">⚔️ ADJECTIVE SLAYER</span>
+      <span class="hud-gear" id="hudGearCount">ARMAMENTS: 0 / 11</span>
+      <span class="hud-dragon" id="hudDragonStatus">BOSS: KBD DORMANT</span>
+    </div>
+
+    <!-- 11 EQUIPMENT SLOTS BELT -->
+    <div class="gear-belt">
+      <span class="gear-label">GEAR:</span>
+      <div class="gear-slot" id="slot-0" title="1. Iron Chainbody">🦺</div>
+      <div class="gear-slot" id="slot-1" title="2. Steel Full Helm">🪖</div>
+      <div class="gear-slot" id="slot-2" title="3. Mithril Platelegs">👖</div>
+      <div class="gear-slot" id="slot-3" title="4. Adamant Kiteshield">🛡️</div>
+      <div class="gear-slot" id="slot-4" title="5. Rune Sword">⚔️</div>
+      <div class="gear-slot" id="slot-5" title="6. Dragon Dagger">🗡️</div>
+      <div class="gear-slot" id="slot-6" title="7. Dragon Scimitar">⚔️</div>
+      <div class="gear-slot" id="slot-7" title="8. Anti-Dragon Shield">🔰</div>
+      <div class="gear-slot" id="slot-8" title="9. Rune Chainmail">🥋</div>
+      <div class="gear-slot" id="slot-9" title="10. Fire Cape">🔥</div>
+      <div class="gear-slot" id="slot-10" title="11. Armadyl Godsword">✨</div>
+    </div>
+
+    <!-- CANVAS VIEWPORT -->
+    <div class="canvas-container" id="gameCanvasContainer">
+      <div class="screen-flash-red" id="screenFlash"></div>
+      <canvas id="rpgCanvas" width="640" height="360"></canvas>
+
+      <!-- KBD REFUSAL TO FIGHT DIALOGUE -->
+      <div class="dragon-dialog" id="dragonRefusalDialog">
+        <div class="dragon-dialog-title">🐲 KING BLACK DRAGON SCOFFS AT YOU!</div>
+        <div class="dragon-dialog-text" id="dragonRefusalMsg">
+          "ROOOAAAR! You only possess <span id="refusalGearCount" style="color:#facc15;">0</span>/11 legendary armaments! King Black Dragon refuses to incinerate an under-equipped mortal! Conquer all 11 grammar guardians across the realm first!"
+        </div>
+        <button class="action-confirm-btn" style="display:block; max-width:240px; margin-top:8px;" onclick="closeDragonDialog()">UNDERSTOOD ↵</button>
+      </div>
+
+      <!-- TRIAL QUESTION MODAL (INFINITE TRIES) -->
+      <div class="modal-overlay" id="quizModal">
+        <div class="battle-header">
+          <span id="battleStageTitle">TRIAL #1: GUARDIAN</span>
+          <span style="color:#4ade80;">INFINITE TRIES ACTIVATED</span>
+        </div>
+
+        <div class="enemy-card">
+          <div class="enemy-avatar" id="enemyEmoji">⚖️</div>
+          <div class="enemy-info">
+            <div class="enemy-name" id="enemyName">Scale Beast</div>
+            <div class="enemy-reward" id="enemyReward">Reward: Iron Chainbody (1/11)</div>
+            <div class="question-box" id="questionPrompt">Question loading...</div>
+          </div>
+        </div>
+
+        <div class="options-grid" id="optionsGrid"></div>
+
+        <div class="explanation-card" id="explanationCard"></div>
+
+        <button class="action-confirm-btn" id="continueBtn" onclick="resumeOverworld()">REWARD CLAIMED! RESUME QUEST ➜</button>
+      </div>
+
+      <!-- DRAMATIC BOSS FIGHT: KING BLACK DRAGON (WITH AUTHENTIC 3-HEADED MODEL) -->
+      <div class="boss-arena" id="bossArena">
+        <div class="boss-hud-top">
+          <div class="hp-container">
+            <span style="color:#38bdf8;">HERO:</span>
+            <div class="hp-bar-outer">
+              <div class="hp-bar-inner" id="heroHpFill"></div>
+            </div>
+            <span id="heroHpText" style="font-size:0.58rem; color:#ffffff;">99/99</span>
+          </div>
+
+          <div class="hp-container">
+            <span style="color:#ef4444;">KBD:</span>
+            <div class="hp-bar-outer">
+              <div class="hp-bar-inner" id="bossHpFill"></div>
+            </div>
+            <span id="bossHpText" style="font-size:0.58rem; color:#ffffff;">250/250</span>
+          </div>
+        </div>
+
+        <div class="boss-combat-stage" id="bossStage">
+          <div class="combatant-hero" id="heroFighter">🧙‍♂️</div>
+          <div class="kbd-boss-wrapper" id="kbdFighter">
+            <img 
+              id="kbdFighterImg" 
+              class="kbd-boss-img" 
+              src="kbd.png" 
+              onerror="this.onerror=null; this.src='https://oldschool.runescape.wiki/images/thumb/King_Black_Dragon.png/320px-King_Black_Dragon.png';" 
+              alt="King Black Dragon" 
+            />
+          </div>
+        </div>
+
+        <div class="boss-actions-grid">
+          <button class="combat-action-btn" id="btnAtk1" onclick="playerCombatAction('GODSWORD', 65)">✨ GODSWORD SPEC</button>
+          <button class="combat-action-btn" id="btnAtk2" onclick="playerCombatAction('SCIMITAR', 40)">⚔️ D-SCIMITAR</button>
+          <button class="combat-action-btn" id="btnHeal" onclick="playerCombatAction('SHARK', 0)">🦈 EAT SHARK (+35 HP)</button>
+        </div>
+      </div>
+
+      <!-- DRAMATIC OSRS DEATH SCREEN -->
+      <div class="death-screen" id="deathScreen">
+        <div style="font-size: 3rem; margin-bottom: 12px;">💀</div>
+        <h2 style="color: #ef4444; font-size: 1.15rem; margin-bottom: 12px; letter-spacing: 1px;">OH DEAR, YOU ARE DEAD!</h2>
+        <p style="font-size: 0.68rem; line-height: 1.6; color: #fed7aa; max-width: 480px; margin-bottom: 20px;">
+          You were incinerated by the King Black Dragon's cataclysmic dragonfire breath!
+        </p>
+        <button class="action-confirm-btn" style="display:block; max-width: 260px;" onclick="respawnHero()">RESPAWN & RETRY KBD 🔄</button>
+      </div>
+
+      <!-- VICTORY FINAL BANNER -->
+      <div class="victory-screen" id="victoryScreen">
+        <div style="font-size: 3.5rem; margin-bottom: 8px;">🏆</div>
+        <h2 style="color: #facc15; font-size: 1.1rem; margin-bottom: 10px;">KING BLACK DRAGON SLAIN!</h2>
+        <p style="font-size: 0.68rem; line-height: 1.6; color: #fed7aa; max-width: 480px; margin-bottom: 18px;">
+          Equipped with all 11 legendary weapons and armours, you vanquished the King Black Dragon and cleansed the realm!
+        </p>
+        <button class="action-confirm-btn" style="display:block; max-width: 260px;" onclick="resetAll()">PLAY AGAIN 🔄</button>
+      </div>
+
+    </div>
+
+    <!-- TOUCH CONTROLLER FOR IPAD -->
+    <div class="controls-panel">
+      <!-- D-Pad -->
+      <div class="dpad-container">
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" id="btnUp">▲</button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" id="btnLeft">◀</button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" id="btnRight">▶</button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" id="btnDown">▼</button>
+        <div class="dpad-empty"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions-container">
+        <button class="touch-action-btn btn-b" id="btnB">RUN</button>
+        <button class="touch-action-btn btn-a" id="btnA">⚔️ A</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* =========================================================
+       AUDIO SYNTHESIZER (8-BIT SOUND EFFECTS)
+       ========================================================= */
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type, duration, delay = 0, vol = 0.12) {
+      if (!audioCtx) return;
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+      }, delay * 1000);
+    }
+
+    function soundItemGet() {
+      playTone(523.25, 'triangle', 0.1, 0.0);
+      playTone(659.25, 'triangle', 0.1, 0.09);
+      playTone(783.99, 'triangle', 0.1, 0.18);
+      playTone(1046.50, 'triangle', 0.25, 0.27);
+    }
+
+    function soundSlash() {
+      playTone(260, 'sawtooth', 0.1, 0.0, 0.2);
+      playTone(110, 'sawtooth', 0.16, 0.05, 0.25);
+    }
+
+    function soundDragonRoar() {
+      playTone(70, 'sawtooth', 0.45, 0.0, 0.35);
+      playTone(50, 'square', 0.6, 0.08, 0.35);
+    }
+
+    function soundEatShark() {
+      playTone(400, 'triangle', 0.1, 0.0, 0.15);
+      playTone(580, 'triangle', 0.18, 0.08, 0.18);
+    }
+
+    function soundPlayerDeath() {
+      playTone(180, 'sawtooth', 0.3, 0.0, 0.3);
+      playTone(130, 'sawtooth', 0.4, 0.2, 0.3);
+      playTone(80, 'square', 0.7, 0.4, 0.35);
+    }
+
+    function soundWrong() {
+      playTone(220, 'sawtooth', 0.14, 0.0, 0.15);
+      playTone(164.81, 'sawtooth', 0.2, 0.12, 0.15);
+    }
+
+    /* =========================================================
+       11 QUESTIONS (Q1, Q2, Q3, Q10 REMOVED)
+       ========================================================= */
+    const questions = [
+      {
+        id: 1,
+        guardian: "Twin Scale Beasts",
+        emoji: "⚖️",
+        rewardItem: "Iron Chainbody",
+        prompt: "1. Bobo weighs 5 kg and Pong weighs 20 kg. Which comparative sentence is correct?",
+        options: ["A. Bobo is heavier than Pong.", "B. Pong is heavier than Bobo.", "C. Pong is heavy than Bobo.", "D. Pong is the heaviest than Bobo."],
+        correct: 1,
+        explanation: "Answer: B — When comparing two subjects, use [adjective]-er + than. Pong has greater weight, so Pong is heavier than Bobo."
+      },
+      {
+        id: 2,
+        guardian: "Great Elephant King",
+        emoji: "🐘",
+        rewardItem: "Steel Full Helm",
+        prompt: "2. Choose the correct spelling to complete the sentence:\n\"An elephant is __________ than a horse.\"",
+        options: ["A. biger", "B. bigger", "C. more big", "D. biggest"],
+        correct: 1,
+        explanation: "Answer: B — One-syllable adjectives ending in a single vowel followed by a single consonant double the last letter (big ➜ bigger)."
+      },
+      {
+        id: 3,
+        guardian: "Sloth Overlord",
+        emoji: "🦥",
+        rewardItem: "Mithril Platelegs",
+        prompt: "3. What is the correct superlative form of the adjective \"lazy\"?",
+        options: ["A. lazeyest", "B. laziest", "C. most lazy", "D. lazierst"],
+        correct: 1,
+        explanation: "Answer: B — For two-syllable adjectives ending in -y, drop the -y and add -iest (lazy ➜ laziest)."
+      },
+      {
+        id: 4,
+        guardian: "Hound Master",
+        emoji: "🐕",
+        rewardItem: "Adamant Kiteshield",
+        prompt: "4. Choose the correct words to complete the sentence:\n\"Sam is __________ dog among the three pets.\"",
+        options: ["A. thinnest", "B. thinner", "C. the thinnest", "D. more thin"],
+        correct: 2,
+        explanation: "Answer: C — Superlatives comparing three or more items require the definite article 'the' before the -est form (the thinnest)."
+      },
+      {
+        id: 5,
+        guardian: "Flame Elemental",
+        emoji: "🔥",
+        rewardItem: "Rune Sword",
+        prompt: "5. Which of the following short adjectives doubles its final consonant before adding -er or -est?",
+        options: ["A. slow", "B. cold", "C. hot", "D. old"],
+        correct: 2,
+        explanation: "Answer: C — Hot has a short vowel before a single consonant (h-o-t), doubling the 't' to make hotter / hottest. (Slow ends in 'w', which is never doubled)."
+      },
+      {
+        id: 6,
+        guardian: "Cocoa Witch",
+        emoji: "🍫",
+        rewardItem: "Dragon Dagger",
+        prompt: "6. Complete the sentence using the correct form of \"delicious\":\n\"Yummy Dark Chocolate is __________ than milk chocolate.\"",
+        options: ["A. deliciouser", "B. more delicious", "C. most delicious", "D. the most delicious"],
+        correct: 1,
+        explanation: "Answer: B — Long adjectives (3 or more syllables) form comparisons using more ... than (more delicious than)."
+      },
+      {
+        id: 7,
+        guardian: "Jewel Djinn",
+        emoji: "💍",
+        rewardItem: "Dragon Scimitar",
+        prompt: "7. This ring costs $10,000. It is __________ item in the entire jewelry shop.",
+        options: ["A. more expensive", "B. the expensivest", "C. expensiver than", "D. the most expensive"],
+        correct: 3,
+        explanation: "Answer: D — Expensive is a 3-syllable adjective; comparing it across the entire store requires the most expensive."
+      },
+      {
+        id: 8,
+        guardian: "Astro Wizard",
+        emoji: "🧙",
+        rewardItem: "Anti-Dragon Shield",
+        prompt: "8. Which sentence is grammatically correct?",
+        options: ["A. Space Travel is more interesting than Three Rabbits.", "B. Space Travel is interestinger than Three Rabbits.", "C. Space Travel is the more interesting than Three Rabbits.", "D. Space Travel is most interesting than Three Rabbits."],
+        correct: 0,
+        explanation: "Answer: A — Interesting takes more ... than for comparative statements between two items."
+      },
+      {
+        id: 9,
+        guardian: "Chronos Keeper",
+        emoji: "⏳",
+        rewardItem: "Rune Chainmail",
+        prompt: "9. Mary is 7 years old and Lucy is 10 years old. Which sentence is correct?",
+        options: ["A. Mary is younger than Lucy.", "B. Mary is youngest than Lucy.", "C. Mary is more young than Lucy.", "D. Mary is the youngest than Lucy."],
+        correct: 0,
+        explanation: "Answer: A — Young is a short adjective; comparing two people requires the comparative suffix -er followed by than (younger than)."
+      },
+      {
+        id: 10,
+        guardian: "Cheetah Knight",
+        emoji: "🐆",
+        rewardItem: "Fire Cape",
+        prompt: "10. Benny runs 100 meters in 12 seconds, Ricky runs in 15 seconds, and Fifi runs in 20 seconds. Benny is the __________ runner.",
+        options: ["A. slowest", "B. fastest", "C. slower", "D. faster"],
+        correct: 1,
+        explanation: "Answer: B — Comparing three subjects requires a superlative. Since Benny took the least time (12s), he is the fastest."
+      },
+      {
+        id: 11,
+        guardian: "Shadow Dragonling",
+        emoji: "🦇",
+        rewardItem: "Armadyl Godsword",
+        prompt: "11. The chocolate cake costs $150 and the mango cake costs $98. The mango cake is __________ the chocolate cake.",
+        options: ["A. more cheap than", "B. cheapest than", "C. cheaper than", "D. the cheapest"],
+        correct: 2,
+        explanation: "Answer: C — Cheap is a one-syllable adjective, so its comparative form is cheaper than (not more cheap)."
+      }
+    ];
+
+    /* =========================================================
+       OVERWORLD MAP & GUARDIAN PLACEMENTS
+       ========================================================= */
+    const canvas = document.getElementById("rpgCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const TILE_SIZE = 32;
+    const MAP_COLS = 20;
+    const MAP_ROWS = 12;
+
+    const overworldMap = [
+      [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+      [3,0,0,1,1,1,0,0,0,3,3,4,4,4,4,3,3,0,0,3],
+      [3,0,1,1,0,1,0,3,0,3,3,4,4,4,4,3,3,0,0,3],
+      [3,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,3],
+      [3,1,1,0,0,0,0,0,0,2,2,0,0,0,0,0,0,1,1,3],
+      [3,1,0,0,3,3,0,0,2,2,2,2,0,0,3,3,0,0,1,3],
+      [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+      [3,0,0,1,0,0,0,0,2,2,2,2,0,0,0,0,1,0,0,3],
+      [3,0,1,1,0,3,3,0,0,2,2,0,0,3,3,0,1,1,0,3],
+      [3,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,0,3],
+      [3,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,0,3],
+      [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+    ];
+
+    const player = {
+      x: 2 * TILE_SIZE,
+      y: 2 * TILE_SIZE,
+      width: 24,
+      height: 28,
+      speed: 3.2,
+      isMoving: false,
+      stepAnim: 0
+    };
+
+    const guardianPositions = [
+      { col: 4, row: 1 },
+      { col: 7, row: 3 },
+      { col: 10, row: 3 },
+      { col: 17, row: 3 },
+      { col: 18, row: 4 },
+      { col: 14, row: 6 },
+      { col: 10, row: 6 },
+      { col: 6, row: 6 },
+      { col: 2, row: 5 },
+      { col: 7, row: 9 },
+      { col: 14, row: 10 }
+    ];
+
+    const kbdOverworld = { col: 12.5, row: 1.5 };
+
+    // Preload Authentic KBD Image for Overworld Canvas & Arena
+    const kbdOverworldImg = new Image();
+    kbdOverworldImg.crossOrigin = "anonymous";
+    kbdOverworldImg.src = "kbd.png";
+    kbdOverworldImg.onerror = () => {
+      kbdOverworldImg.src = "https://oldschool.runescape.wiki/images/thumb/King_Black_Dragon.png/320px-King_Black_Dragon.png";
+    };
+
+    let defeatedGuardians = new Set();
+    let currentEncounter = null;
+    let inBattle = false;
+    let inBossBattle = false;
+
+    const keys = { up: false, down: false, left: false, right: false, sprint: false };
+
+    function canMoveTo(newX, newY) {
+      const corners = [
+        { x: newX + 4, y: newY + 8 },
+        { x: newX + player.width - 4, y: newY + 8 },
+        { x: newX + 4, y: newY + player.height - 2 },
+        { x: newX + player.width - 4, y: newY + player.height - 2 }
+      ];
+
+      for (const pt of corners) {
+        const c = Math.floor(pt.x / TILE_SIZE);
+        const r = Math.floor(pt.y / TILE_SIZE);
+        if (r < 0 || r >= MAP_ROWS || c < 0 || c >= MAP_COLS) return false;
+        const tile = overworldMap[r][c];
+        if (tile === 2 || tile === 3) return false;
+      }
+      return true;
+    }
+
+    function checkInteractions() {
+      if (inBattle || inBossBattle) return;
+
+      const px = player.x + player.width / 2;
+      const py = player.y + player.height / 2;
+
+      // Check KBD Lair Encounter
+      const kbdX = kbdOverworld.col * TILE_SIZE + 32;
+      const kbdY = kbdOverworld.row * TILE_SIZE + 32;
+      const distToKBD = Math.hypot(px - kbdX, py - kbdY);
+
+      if (distToKBD < 52) {
+        if (defeatedGuardians.size < 11) {
+          soundDragonRoar();
+          document.getElementById("refusalGearCount").textContent = defeatedGuardians.size;
+          document.getElementById("dragonRefusalDialog").style.display = "flex";
+        } else {
+          startKBDBossBattle();
+        }
+        return;
+      }
+
+      // Check 11 Guardians
+      for (let i = 0; i < guardianPositions.length; i++) {
+        if (defeatedGuardians.has(i)) continue;
+        const g = guardianPositions[i];
+        const gx = g.col * TILE_SIZE + TILE_SIZE / 2;
+        const gy = g.row * TILE_SIZE + TILE_SIZE / 2;
+        const dist = Math.hypot(px - gx, py - gy);
+
+        if (dist < 26) {
+          triggerQuiz(i);
+          break;
+        }
+      }
+    }
+
+    function closeDragonDialog() {
+      document.getElementById("dragonRefusalDialog").style.display = "none";
+      player.y += 14;
+    }
+
+    /* =========================================================
+       QUIZ MODAL LOGIC (INFINITE TRIES)
+       ========================================================= */
+    const quizModal = document.getElementById("quizModal");
+    const optionsGrid = document.getElementById("optionsGrid");
+    const explanationCard = document.getElementById("explanationCard");
+    const continueBtn = document.getElementById("continueBtn");
+
+    function triggerQuiz(guardianIndex) {
+      inBattle = true;
+      currentEncounter = guardianIndex;
+      playTone(440, 'triangle', 0.12, 0.0);
+
+      const q = questions[guardianIndex];
+      document.getElementById("battleStageTitle").textContent = `TRIAL ${guardianIndex + 1} / 11: ${q.guardian.toUpperCase()}`;
+      document.getElementById("enemyEmoji").textContent = q.emoji;
+      document.getElementById("enemyName").textContent = q.guardian;
+      document.getElementById("enemyReward").textContent = `Reward: ${q.rewardItem} (${guardianIndex + 1}/11)`;
+      document.getElementById("questionPrompt").textContent = q.prompt;
+
+      explanationCard.style.display = "none";
+      explanationCard.textContent = "";
+      continueBtn.style.display = "none";
+
+      optionsGrid.innerHTML = "";
+      q.options.forEach((optText, optIdx) => {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = optText;
+        btn.onclick = () => handleQuizAnswer(optIdx, btn);
+        optionsGrid.appendChild(btn);
+      });
+
+      quizModal.classList.add("active");
+    }
+
+    function handleQuizAnswer(chosenIdx, buttonEl) {
+      const q = questions[currentEncounter];
+
+      if (chosenIdx === q.correct) {
+        soundItemGet();
+        buttonEl.classList.add("correct");
+
+        const allBtns = optionsGrid.querySelectorAll(".choice-btn");
+        allBtns.forEach(b => b.disabled = true);
+
+        // Unlock Item
+        defeatedGuardians.add(currentEncounter);
+        document.getElementById(`slot-${currentEncounter}`).classList.add("unlocked");
+        document.getElementById("hudGearCount").textContent = `ARMAMENTS: ${defeatedGuardians.size} / 11`;
+
+        if (defeatedGuardians.size === 11) {
+          const status = document.getElementById("hudDragonStatus");
+          status.textContent = "BOSS: KBD READY FOR BATTLE!";
+          status.style.color = "#22c55e";
+        }
+
+        explanationCard.textContent = q.explanation;
+        explanationCard.style.display = "block";
+        continueBtn.style.display = "block";
+      } else {
+        soundWrong();
+        buttonEl.classList.remove("wrong");
+        void buttonEl.offsetWidth;
+        buttonEl.classList.add("wrong");
+        buttonEl.disabled = true;
+      }
+    }
+
+    function resumeOverworld() {
+      quizModal.classList.remove("active");
+      inBattle = false;
+    }
+
+    /* =========================================================
+       DRAMATIC KBD BOSS BATTLE ENGINE WITH MULTI-HEAD BREATH ATTACKS
+       ========================================================= */
+    const bossArena = document.getElementById("bossArena");
+    const container = document.getElementById("gameCanvasContainer");
+    const flashRed = document.getElementById("screenFlash");
+
+    let playerHP = 99;
+    const PLAYER_MAX_HP = 99;
+    let kbdHP = 250;
+    const KBD_MAX_HP = 250;
+    let isCombatLocked = false;
+
+    function startKBDBossBattle() {
+      inBossBattle = true;
+      playerHP = PLAYER_MAX_HP;
+      kbdHP = KBD_MAX_HP;
+      updateCombatUI();
+      soundDragonRoar();
+      bossArena.classList.add("active");
+    }
+
+    function updateCombatUI() {
+      document.getElementById("heroHpFill").style.width = `${Math.max(0, (playerHP / PLAYER_MAX_HP) * 100)}%`;
+      document.getElementById("heroHpText").textContent = `${Math.max(0, playerHP)}/${PLAYER_MAX_HP}`;
+      document.getElementById("bossHpFill").style.width = `${Math.max(0, (kbdHP / KBD_MAX_HP) * 100)}%`;
+      document.getElementById("bossHpText").textContent = `${Math.max(0, kbdHP)}/${KBD_MAX_HP}`;
+    }
+
+    function triggerScreenEffects() {
+      container.classList.remove("screen-shake");
+      void container.offsetWidth;
+      container.classList.add("screen-shake");
+
+      flashRed.classList.add("active");
+      setTimeout(() => flashRed.classList.remove("active"), 190);
+    }
+
+    function spawnHitsplatOn(targetEl, damage, type = 'red') {
+      const stage = document.getElementById("bossStage");
+      const rect = targetEl.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+
+      const splat = document.createElement("div");
+      splat.className = `hitsplat ${type}`;
+      splat.textContent = damage;
+      splat.style.left = `${rect.left - stageRect.left + rect.width / 2 - 22}px`;
+      splat.style.top = `${rect.top - stageRect.top + 10}px`;
+      stage.appendChild(splat);
+
+      setTimeout(() => splat.remove(), 900);
+    }
+
+    // Authentic Multi-Elemental Dragonfire Particles from the 3 Heads
+    function spawnDragonfireParticles(attackMode = 'FIRE') {
+      const stage = document.getElementById("bossStage");
+      const kbdEl = document.getElementById("kbdFighter");
+      const kbdRect = kbdEl.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+
+      let palette = ["#ef4444", "#f97316", "#facc15", "#ffffff"];
+      if (attackMode === 'POISON') {
+        palette = ["#16a34a", "#22c55e", "#86efac", "#a3e635"];
+      } else if (attackMode === 'ICE') {
+        palette = ["#0284c7", "#38bdf8", "#bae6fd", "#c084fc", "#ffffff"];
+      }
+
+      for (let i = 0; i < 48; i++) {
+        const p = document.createElement("div");
+        p.style.position = "absolute";
+        const size = Math.random() * 18 + 8;
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.borderRadius = "50%";
+        p.style.background = palette[Math.floor(Math.random() * palette.length)];
+        
+        // Heads positioned on left side of KBD sprite
+        p.style.left = `${kbdRect.left - stageRect.left + 35}px`;
+        p.style.top = `${kbdRect.top - stageRect.top + 45 + (Math.random() * 40 - 20)}px`;
+        p.style.boxShadow = `0 0 16px ${p.style.background}`;
+        p.style.pointerEvents = "none";
+        p.style.zIndex = "85";
+        p.style.transition = `all ${Math.random() * 0.35 + 0.35}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
+        stage.appendChild(p);
+
+        setTimeout(() => {
+          const destX = kbdRect.left - stageRect.left - (Math.random() * 260 + 130);
+          const destY = kbdRect.top - stageRect.top + (Math.random() * 140 - 70);
+          p.style.left = `${destX}px`;
+          p.style.top = `${destY}px`;
+          p.style.transform = `scale(${Math.random() * 2.2 + 1.8})`;
+          p.style.opacity = "0";
+        }, 20);
+
+        setTimeout(() => p.remove(), 750);
+      }
+    }
+
+    function toggleCombatButtons(disabled) {
+      document.getElementById("btnAtk1").disabled = disabled;
+      document.getElementById("btnAtk2").disabled = disabled;
+      document.getElementById("btnHeal").disabled = disabled;
+    }
+
+    function playerCombatAction(actionType, power) {
+      if (isCombatLocked) return;
+      isCombatLocked = true;
+      toggleCombatButtons(true);
+
+      const heroEl = document.getElementById("heroFighter");
+      const kbdEl = document.getElementById("kbdFighter");
+
+      if (actionType === 'SHARK') {
+        soundEatShark();
+        playerHP = Math.min(PLAYER_MAX_HP, playerHP + 35);
+        updateCombatUI();
+        spawnHitsplatOn(heroEl, 35, 'green');
+
+        setTimeout(kbdCounterAttack, 700);
+        return;
+      }
+
+      // Attack
+      soundSlash();
+      heroEl.classList.add("strike");
+      setTimeout(() => heroEl.classList.remove("strike"), 180);
+
+      setTimeout(() => {
+        const damage = Math.floor(power * (0.85 + Math.random() * 0.3));
+        kbdHP = Math.max(0, kbdHP - damage);
+        updateCombatUI();
+
+        kbdEl.classList.add("hurt");
+        spawnHitsplatOn(kbdEl, damage, 'red');
+        playTone(340, 'square', 0.12, 0.0, 0.2);
+
+        setTimeout(() => kbdEl.classList.remove("hurt"), 300);
+
+        if (kbdHP <= 0) {
+          setTimeout(defeatKBD, 600);
+        } else {
+          setTimeout(kbdCounterAttack, 650);
+        }
+      }, 180);
+    }
+
+    function kbdCounterAttack() {
+      const heroEl = document.getElementById("heroFighter");
+      const kbdEl = document.getElementById("kbdFighter");
+
+      soundDragonRoar();
+      kbdEl.classList.add("strike");
+      setTimeout(() => kbdEl.classList.remove("strike"), 220);
+
+      const breathTypes = ['FIRE', 'POISON', 'ICE'];
+      const chosenBreath = breathTypes[Math.floor(Math.random() * breathTypes.length)];
+
+      spawnDragonfireParticles(chosenBreath);
+      triggerScreenEffects();
+
+      setTimeout(() => {
+        // High lethal damage from King Black Dragon (26 to 48 damage)
+        const dragonDamage = Math.floor(Math.random() * 23 + 26);
+        playerHP = Math.max(0, playerHP - dragonDamage);
+        updateCombatUI();
+
+        heroEl.classList.add("burned");
+        spawnHitsplatOn(heroEl, dragonDamage, 'red');
+        setTimeout(() => heroEl.classList.remove("burned"), 500);
+
+        if (playerHP <= 0) {
+          setTimeout(playerDied, 600);
+        } else {
+          isCombatLocked = false;
+          toggleCombatButtons(false);
+        }
+      }, 350);
+    }
+
+    function playerDied() {
+      soundPlayerDeath();
+      bossArena.classList.remove("active");
+      inBossBattle = false;
+      document.getElementById("deathScreen").classList.add("active");
+    }
+
+    function respawnHero() {
+      document.getElementById("deathScreen").classList.remove("active");
+      isCombatLocked = false;
+      toggleCombatButtons(false);
+      player.x = 10 * TILE_SIZE;
+      player.y = 3 * TILE_SIZE;
+    }
+
+    function defeatKBD() {
+      bossArena.classList.remove("active");
+      inBossBattle = false;
+      document.getElementById("victoryScreen").classList.add("active");
+      playTone(523.25, 'triangle', 0.2, 0.0);
+      playTone(659.25, 'triangle', 0.2, 0.15);
+      playTone(783.99, 'triangle', 0.25, 0.3);
+      playTone(1046.50, 'triangle', 0.6, 0.45);
+    }
+
+    function resetAll() {
+      defeatedGuardians.clear();
+      document.querySelectorAll(".gear-slot").forEach(s => s.classList.remove("unlocked"));
+      document.getElementById("hudGearCount").textContent = "ARMAMENTS: 0 / 11";
+      const status = document.getElementById("hudDragonStatus");
+      status.textContent = "BOSS: KBD DORMANT";
+      status.style.color = "#ef4444";
+      document.getElementById("victoryScreen").classList.remove("active");
+      document.getElementById("deathScreen").classList.remove("active");
+      player.x = 2 * TILE_SIZE;
+      player.y = 2 * TILE_SIZE;
+      inBattle = false;
+      inBossBattle = false;
+      isCombatLocked = false;
+      toggleCombatButtons(false);
+    }
+
+    /* =========================================================
+       OVERWORLD RENDERING
+       ========================================================= */
+    function drawOverworld() {
+      for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+          const tile = overworldMap[r][c];
+          const px = c * TILE_SIZE;
+          const py = r * TILE_SIZE;
+
+          if (tile === 0) {
+            ctx.fillStyle = "#1e2c1a";
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#2d4227";
+            ctx.fillRect(px + 4, py + 8, 3, 5);
+          } else if (tile === 1) {
+            ctx.fillStyle = "#4a3b32";
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#2b211a";
+            ctx.strokeRect(px + 1, py + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+          } else if (tile === 2) {
+            ctx.fillStyle = "#dc2626";
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#facc15";
+            ctx.fillRect(px + 6, py + 10, 8, 4);
+          } else if (tile === 3) {
+            ctx.fillStyle = "#1a1512";
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#2d241e";
+            ctx.beginPath();
+            ctx.arc(px + 16, py + 16, 12, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (tile === 4) {
+            ctx.fillStyle = "#1c0a0a";
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = "#7f1d1d";
+            ctx.fillRect(px + 8, py + 8, 16, 16);
+          }
+        }
+      }
+
+      // Draw KBD in Caldera
+      const kbdPixelX = kbdOverworld.col * TILE_SIZE;
+      const kbdPixelY = kbdOverworld.row * TILE_SIZE;
+      const breathing = Math.sin(Date.now() / 320) * 3;
+
+      // Caldera Lava Glow
+      ctx.fillStyle = "rgba(239, 68, 68, 0.32)";
+      ctx.beginPath();
+      ctx.arc(kbdPixelX + 44, kbdPixelY + 36, 52, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Render the 3-headed KBD sprite
+      if (kbdOverworldImg.complete && kbdOverworldImg.naturalWidth > 0) {
+        ctx.drawImage(kbdOverworldImg, kbdPixelX, kbdPixelY + breathing, 90, 68);
+      } else {
+        // Fallback icon while loading
+        ctx.font = "44px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🐲", kbdPixelX + 44, kbdPixelY + 32 + breathing);
+      }
+
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(kbdPixelX + 6, kbdPixelY - 12 + breathing, 78, 14);
+      ctx.strokeStyle = "#dc2626";
+      ctx.strokeRect(kbdPixelX + 6, kbdPixelY - 12 + breathing, 78, 14);
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "7px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("KBD (BOSS)", kbdPixelX + 45, kbdPixelY - 5 + breathing);
+
+      // Draw 11 Guardians
+      ctx.font = "18px sans-serif";
+      guardianPositions.forEach((g, idx) => {
+        const gx = g.col * TILE_SIZE + TILE_SIZE / 2;
+        const gy = g.row * TILE_SIZE + TILE_SIZE / 2;
+
+        if (defeatedGuardians.has(idx)) {
+          ctx.fillStyle = "#facc15";
+          ctx.beginPath();
+          ctx.arc(gx, gy, 7, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const floatBob = Math.sin(Date.now() / 250 + idx) * 3;
+          ctx.fillText(questions[idx].emoji, gx, gy + floatBob);
+
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(gx - 10, gy - 20 + floatBob, 20, 11);
+          ctx.strokeStyle = "#facc15";
+          ctx.strokeRect(gx - 10, gy - 20 + floatBob, 20, 11);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "8px 'Press Start 2P', monospace";
+          ctx.fillText(`${idx + 1}`, gx, gy - 14 + floatBob);
+          ctx.font = "18px sans-serif";
+        }
+      });
+
+      // Draw Hero
+      const px = player.x;
+      const py = player.y;
+
+      ctx.fillStyle = defeatedGuardians.has(9) ? "#f97316" : "#b91c1c"; // Fire Cape
+      ctx.fillRect(px + 4, py + 10, 16, 14);
+
+      ctx.fillStyle = defeatedGuardians.has(8) ? "#38bdf8" : (defeatedGuardians.has(0) ? "#94a3b8" : "#2563eb");
+      ctx.fillRect(px + 5, py + 8, 14, 13);
+
+      ctx.fillStyle = defeatedGuardians.has(1) ? "#cbd5e1" : "#94a3b8"; // Steel Helm
+      ctx.fillRect(px + 6, py + 1, 12, 10);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(px + 8, py + 5, 8, 3);
+
+      const legAnim = player.isMoving ? Math.sin(player.stepAnim) * 3 : 0;
+      ctx.fillStyle = defeatedGuardians.has(2) ? "#60a5fa" : "#475569";
+      ctx.fillRect(px + 6, py + 21, 4, 6 + legAnim);
+      ctx.fillRect(px + 14, py + 21, 4, 6 - legAnim);
+
+      // Weapon
+      if (defeatedGuardians.has(10)) {
+        ctx.fillStyle = "#facc15"; // Armadyl Godsword
+        ctx.fillRect(px + 19, py + 2, 4, 18);
+      } else if (defeatedGuardians.has(6)) {
+        ctx.fillStyle = "#dc2626"; // Dragon Scimitar
+        ctx.fillRect(px + 19, py + 6, 3, 14);
+      } else if (defeatedGuardians.has(4)) {
+        ctx.fillStyle = "#38bdf8"; // Rune Sword
+        ctx.fillRect(px + 19, py + 6, 2, 13);
+      } else {
+        ctx.fillStyle = "#d97706";
+        ctx.fillRect(px + 19, py + 8, 2, 10);
+      }
+
+      // Shield
+      if (defeatedGuardians.has(7)) {
+        ctx.fillStyle = "#f97316"; // Anti-Dragon Shield
+        ctx.fillRect(px + 1, py + 9, 4, 10);
+      } else if (defeatedGuardians.has(3)) {
+        ctx.fillStyle = "#15803d"; // Adamant Kiteshield
+        ctx.fillRect(px + 1, py + 9, 4, 10);
+      }
+    }
+
+    /* =========================================================
+       MAIN GAME LOOP
+       ========================================================= */
+    function gameLoop() {
+      if (!inBattle && !inBossBattle) {
+        let speed = keys.sprint ? player.speed * 1.6 : player.speed;
+        let moved = false;
+
+        let nextX = player.x;
+        let nextY = player.y;
+
+        if (keys.up) { nextY -= speed; moved = true; }
+        if (keys.down) { nextY += speed; moved = true; }
+        if (keys.left) { nextX -= speed; moved = true; }
+        if (keys.right) { nextX += speed; moved = true; }
+
+        if (moved) {
+          if (canMoveTo(nextX, player.y)) player.x = nextX;
+          if (canMoveTo(player.x, nextY)) player.y = nextY;
+          player.isMoving = true;
+          player.stepAnim += 0.35;
+          checkInteractions();
+        } else {
+          player.isMoving = false;
+        }
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawOverworld();
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* =========================================================
+       CONTROLLER & INPUT BINDINGS
+       ========================================================= */
+    window.addEventListener("keydown", (e) => {
+      initAudio();
+      if (e.code === "ArrowUp" || e.code === "KeyW") keys.up = true;
+      if (e.code === "ArrowDown" || e.code === "KeyS") keys.down = true;
+      if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+      if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+      if (e.code === "ShiftLeft" || e.code === "KeyX") keys.sprint = true;
+      if (e.code === "Space" || e.code === "KeyZ" || e.code === "Enter") checkInteractions();
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "ArrowUp" || e.code === "KeyW") keys.up = false;
+      if (e.code === "ArrowDown" || e.code === "KeyS") keys.down = false;
+      if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+      if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+      if (e.code === "ShiftLeft" || e.code === "KeyX") keys.sprint = false;
+    });
+
+    function bindBtn(id, onPress, onRelease) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        initAudio();
+        onPress();
+      });
+      el.addEventListener("pointerup", (e) => { e.preventDefault(); onRelease(); });
+      el.addEventListener("pointerleave", (e) => { e.preventDefault(); onRelease(); });
+      el.addEventListener("pointercancel", (e) => { e.preventDefault(); onRelease(); });
+    }
+
+    bindBtn("btnUp", () => { keys.up = true; }, () => { keys.up = false; });
+    bindBtn("btnDown", () => { keys.down = true; }, () => { keys.down = false; });
+    bindBtn("btnLeft", () => { keys.left = true; }, () => { keys.left = false; });
+    bindBtn("btnRight", () => { keys.right = true; }, () => { keys.right = false; });
+    bindBtn("btnB", () => { keys.sprint = true; }, () => { keys.sprint = false; });
+    bindBtn("btnA", () => { checkInteractions(); }, () => {});
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
