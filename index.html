@@ -6,56 +6,63 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>OSRS: Lair of the King Black Dragon</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
 
   <style>
+    @font-face {
+      font-family: 'RuneScape-Plain-12';
+      src: url('RuneScape-Plain-12.ttf') format('truetype'),
+           url('RuneScape-Plain-12.tff') format('truetype'),
+           url('https://fonts.cdnfonts.com/s/14878/RuneScape-Plain-12.woff') format('woff'),
+           local('RuneScape-Plain-12');
+    }
+
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
+      image-rendering: pixelated;
     }
 
     body {
       margin: 0;
       padding: 0;
       background: #080604;
-      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-family: 'RuneScape-Plain-12', monospace, sans-serif;
       color: #ffff00;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
       min-height: 100vh;
       overflow-x: hidden;
       touch-action: none;
-      text-shadow: 2px 2px #000;
+      text-shadow: 2px 2px 0px #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
+    /* Outer Wrapper */
     .game-wrapper {
       width: 100%;
-      max-width: 920px;
+      max-width: 1100px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 8px;
+      padding: 6px;
     }
 
-    /* Top HUD */
+    /* Top Status HUD */
     .rpg-hud {
-      width: 100%;
       background: #2b2219;
       border: 4px solid #534537;
       border-radius: 6px;
-      padding: 10px 14px;
+      padding: 8px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
-      font-size: 0.68rem;
-      margin-bottom: 8px;
+      gap: 6px;
+      font-size: 1.15rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.85);
+      width: 100%;
     }
 
     .hud-gear { color: #38bdf8; }
@@ -69,30 +76,30 @@
       50% { opacity: 0.6; }
     }
 
-    /* 11 Equipment Inventory Belt */
+    /* Gear Belt */
     .gear-belt {
-      width: 100%;
       background: #17120c;
       border: 3px solid #382e24;
       border-radius: 6px;
-      padding: 6px 10px;
-      margin-bottom: 8px;
+      padding: 5px 8px;
       display: flex;
       align-items: center;
       gap: 6px;
       overflow-x: auto;
+      width: 100%;
+      -webkit-overflow-scrolling: touch;
     }
 
     .gear-label {
-      font-size: 0.6rem;
+      font-size: 1.1rem;
       color: #facc15;
       white-space: nowrap;
-      margin-right: 4px;
+      margin-right: 2px;
     }
 
     .gear-slot {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       background: #2b2219;
       border: 2px solid #534537;
       border-radius: 4px;
@@ -112,12 +119,11 @@
       box-shadow: 0 0 8px #eab308;
     }
 
-    /* Screen Frame */
+    /* Canvas Viewport */
     .canvas-container {
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      max-height: 460px;
       background: #000;
       border: 5px solid #382e24;
       border-radius: 8px;
@@ -129,58 +135,271 @@
       width: 100%;
       height: 100%;
       display: block;
-      image-rendering: pixelated;
     }
 
-    /* Screen Shakes & Flashes */
+    /* Shakes & Flashes */
     .screen-shake {
       animation: shakeScreenAnim 0.4s ease-in-out;
     }
 
     @keyframes shakeScreenAnim {
       0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      15% { transform: translate(-8px, 6px) rotate(-1deg); }
-      30% { transform: translate(8px, -6px) rotate(1.5deg); }
-      45% { transform: translate(-6px, -4px) rotate(-1deg); }
-      60% { transform: translate(6px, 6px) rotate(1deg); }
-      80% { transform: translate(-3px, 2px) rotate(0deg); }
+      15% { transform: translate(-10px, 8px) rotate(-1.5deg); }
+      30% { transform: translate(10px, -8px) rotate(2deg); }
+      45% { transform: translate(-8px, -5px) rotate(-1deg); }
+      60% { transform: translate(8px, 8px) rotate(1.5deg); }
+      80% { transform: translate(-4px, 3px) rotate(0deg); }
     }
 
     .screen-flash-red {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(220, 38, 38, 0.65);
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(220, 38, 38, 0.7);
       pointer-events: none;
       z-index: 55;
       opacity: 0;
       transition: opacity 0.1s ease;
     }
+    .screen-flash-red.active { opacity: 1; }
 
-    .screen-flash-red.active {
-      opacity: 1;
+    /* =========================================================
+       TOUCH CONTROLLER BUTTONS
+       ========================================================= */
+    .dpad-container {
+      display: grid;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
+      gap: 4px;
     }
 
-    /* Quiz Modal */
+    .dpad-btn {
+      background: #3b2d20;
+      border: 3px solid #63503b;
+      border-radius: 8px;
+      color: #facc15;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px #1c150e;
+      touch-action: none;
+    }
+
+    .dpad-btn:active {
+      background: #4d3c2b;
+      transform: translateY(2px);
+      box-shadow: 0 2px #1c150e;
+    }
+
+    .dpad-empty {
+      background: transparent;
+      border: none;
+      pointer-events: none;
+    }
+
+    .actions-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .touch-action-btn {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-family: 'RuneScape-Plain-12', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-shadow: 2px 2px #000;
+      touch-action: none;
+    }
+
+    .btn-a {
+      background: #15803d;
+      border-color: #22c55e;
+      box-shadow: 0 5px #14532d;
+    }
+    .btn-a:active { transform: translateY(3px); box-shadow: 0 2px #14532d; }
+
+    .btn-b {
+      background: #b91c1c;
+      border-color: #ef4444;
+      box-shadow: 0 5px #7f1d1d;
+    }
+    .btn-b:active { transform: translateY(3px); box-shadow: 0 2px #7f1d1d; }
+
+    /* =========================================================
+       LAYOUT 1: PHONE (VERTICAL UI) - ZERO TEXT CLIPPING
+       ========================================================= */
+    @media (max-width: 767px) and (orientation: portrait), (max-width: 600px) {
+      .game-wrapper {
+        width: 100%;
+        max-width: 480px;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .main-stage-layout {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .canvas-container {
+        max-height: 250px;
+      }
+
+      .controls-panel {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin-top: 4px;
+      }
+
+      .dpad-container {
+        grid-template-columns: repeat(3, 48px);
+        grid-template-rows: repeat(3, 48px);
+      }
+
+      .actions-container {
+        gap: 12px;
+      }
+
+      .touch-action-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.1rem;
+      }
+
+      /* Fullscreen Battle Modal on Mobile: Prevents Clipping */
+      .modal-overlay,
+      .boss-arena,
+      .death-screen,
+      .victory-screen,
+      .dragon-dialog {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        z-index: 9999 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 16px 12px 24px 12px !important;
+        border-radius: 0 !important;
+        border: none !important;
+      }
+
+      .options-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+      }
+
+      .choice-btn {
+        padding: 12px 10px !important;
+        font-size: 1.25rem !important;
+      }
+
+      .question-box {
+        max-height: none !important;
+        overflow: visible !important;
+        font-size: 1.2rem !important;
+        line-height: 1.5 !important;
+      }
+    }
+
+    /* =========================================================
+       LAYOUT 2: PC / iPAD (HORIZONTAL UI)
+       ========================================================= */
+    @media (min-width: 768px), (orientation: landscape) and (min-width: 601px) {
+      .game-wrapper {
+        width: 100%;
+        max-width: 1120px;
+        padding: 10px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .main-stage-layout {
+        display: grid;
+        grid-template-columns: 190px 1fr 190px;
+        grid-gap: 16px;
+        align-items: center;
+        justify-items: center;
+        width: 100%;
+      }
+
+      .center-stage {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .canvas-container {
+        max-height: 440px;
+      }
+
+      .controls-panel-left {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .controls-panel-right {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .actions-container {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .touch-action-btn {
+        width: 72px;
+        height: 72px;
+        font-size: 1.25rem;
+      }
+
+      .dpad-container {
+        grid-template-columns: repeat(3, 56px);
+        grid-template-rows: repeat(3, 56px);
+      }
+
+      .modal-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        overflow-y: auto;
+      }
+    }
+
+    /* =========================================================
+       MODAL DIALOGS & BATTLE INTERFACES
+       ========================================================= */
     .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(11, 9, 7, 0.94);
+      background: rgba(11, 9, 7, 0.96);
       display: none;
       flex-direction: column;
       justify-content: space-between;
       padding: 14px;
       z-index: 50;
     }
-
-    .modal-overlay.active {
-      display: flex;
-    }
+    .modal-overlay.active { display: flex; }
 
     .battle-header {
       display: flex;
@@ -190,14 +409,14 @@
       border: 3px solid #534537;
       border-radius: 6px;
       padding: 8px 12px;
-      font-size: 0.65rem;
+      font-size: 1.15rem;
       color: #ff981f;
     }
 
     .enemy-card {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       background: #231c15;
       border: 3px solid #382e24;
       border-radius: 8px;
@@ -206,8 +425,8 @@
     }
 
     .enemy-avatar {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       background: #14100b;
       border: 2px solid #facc15;
       border-radius: 6px;
@@ -218,24 +437,14 @@
     }
 
     .enemy-info { flex: 1; }
-
-    .enemy-name {
-      font-size: 0.72rem;
-      color: #00ffff;
-      margin-bottom: 4px;
-    }
-
-    .enemy-reward {
-      font-size: 0.58rem;
-      color: #4ade80;
-      margin-bottom: 6px;
-    }
+    .enemy-name { font-size: 1.25rem; color: #00ffff; margin-bottom: 2px; }
+    .enemy-reward { font-size: 1.1rem; color: #4ade80; margin-bottom: 4px; }
 
     .question-box {
-      font-size: 0.7rem;
-      line-height: 1.55;
+      font-size: 1.25rem;
+      line-height: 1.5;
       color: #ffffff;
-      max-height: 80px;
+      max-height: 110px;
       overflow-y: auto;
     }
 
@@ -247,13 +456,13 @@
     }
 
     .choice-btn {
-      font-family: inherit;
+      font-family: 'RuneScape-Plain-12', monospace;
       background: #504437;
       color: #fffe9e;
       border: 3px solid #73614e;
       border-radius: 6px;
-      padding: 10px 8px;
-      font-size: 0.64rem;
+      padding: 10px 10px;
+      font-size: 1.2rem;
       text-align: left;
       cursor: pointer;
       line-height: 1.4;
@@ -291,14 +500,14 @@
       border: 3px dashed #facc15;
       border-radius: 6px;
       padding: 10px;
-      font-size: 0.62rem;
+      font-size: 1.15rem;
       line-height: 1.5;
       color: #fed7aa;
       margin-top: 4px;
     }
 
     .action-confirm-btn {
-      font-family: inherit;
+      font-family: 'RuneScape-Plain-12', monospace;
       display: none;
       width: 100%;
       background: #8b2500;
@@ -306,7 +515,7 @@
       border: 3px solid #b23a0d;
       border-radius: 6px;
       padding: 12px;
-      font-size: 0.72rem;
+      font-size: 1.3rem;
       cursor: pointer;
       box-shadow: 0 4px #4a1200;
       margin-top: 6px;
@@ -321,9 +530,7 @@
     /* KBD Refusal Dialogue */
     .dragon-dialog {
       position: absolute;
-      bottom: 14px;
-      left: 14px;
-      right: 14px;
+      bottom: 12px; left: 12px; right: 12px;
       background: #2b1414;
       border: 4px solid #dc2626;
       border-radius: 8px;
@@ -334,25 +541,13 @@
       z-index: 45;
       box-shadow: 0 0 16px rgba(220, 38, 38, 0.7);
     }
+    .dragon-dialog-title { color: #ef4444; font-size: 1.25rem; }
+    .dragon-dialog-text { color: #ffffff; font-size: 1.15rem; line-height: 1.5; }
 
-    .dragon-dialog-title {
-      color: #ef4444;
-      font-size: 0.75rem;
-    }
-
-    .dragon-dialog-text {
-      color: #ffffff;
-      font-size: 0.65rem;
-      line-height: 1.5;
-    }
-
-    /* DRAMATIC BOSS FIGHT ARENA */
+    /* BOSS ARENA */
     .boss-arena {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at center, #350808 0%, #0d0202 100%);
       display: none;
       flex-direction: column;
@@ -360,40 +555,30 @@
       padding: 12px;
       z-index: 60;
     }
-
-    .boss-arena.active {
-      display: flex;
-    }
+    .boss-arena.active { display: flex; }
 
     .boss-hud-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       border: 3px solid #dc2626;
       border-radius: 6px;
       padding: 6px 12px;
-      font-size: 0.65rem;
+      font-size: 1.15rem;
     }
 
-    .hp-container {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
+    .hp-container { display: flex; align-items: center; gap: 6px; }
     .hp-bar-outer {
-      width: 140px;
+      width: 120px;
       height: 14px;
       background: #450a0a;
       border: 2px solid #ffffff;
       border-radius: 4px;
       overflow: hidden;
     }
-
     .hp-bar-inner {
-      height: 100%;
-      width: 100%;
+      height: 100%; width: 100%;
       background: #22c55e;
       transition: width 0.25s ease;
     }
@@ -403,52 +588,54 @@
       flex: 1;
       display: flex;
       align-items: center;
-      justify-content: space-around;
+      justify-content: space-between;
+      padding: 0 20px;
       overflow: hidden;
     }
 
     .combatant-hero {
-      font-size: 3.5rem;
+      font-size: 3.4rem;
       filter: drop-shadow(0 0 10px #38bdf8);
       transition: transform 0.15s ease;
-      position: relative;
     }
-
-    .combatant-hero.strike {
-      transform: translateX(80px) scale(1.15);
-    }
-
-    .combatant-hero.burned {
-      animation: heroBurnedAnim 0.5s ease;
-    }
-
+    .combatant-hero.strike { transform: translateX(90px) scale(1.15); }
+    .combatant-hero.burned { animation: heroBurnedAnim 0.5s ease; }
     @keyframes heroBurnedAnim {
       0%, 100% { filter: brightness(1) drop-shadow(0 0 10px #38bdf8); transform: translateX(0); }
-      25% { filter: brightness(3) drop-shadow(0 0 25px #ff0000); transform: translateX(-15px); }
-      50% { filter: brightness(1.5) drop-shadow(0 0 30px #ea580c); transform: translateX(10px); }
+      25% { filter: brightness(3.5) drop-shadow(0 0 25px #ff0000); transform: translateX(-18px); }
+      50% { filter: brightness(2) drop-shadow(0 0 35px #ea580c); transform: translateX(12px); }
     }
 
-    .combatant-kbd {
-      font-size: 5.5rem;
-      filter: drop-shadow(0 0 16px #ef4444);
-      transition: transform 0.15s ease;
+    .kbd-boss-wrapper {
       position: relative;
+      width: 230px;
+      height: 165px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease;
     }
 
-    .combatant-kbd.strike {
-      transform: translateX(-70px) scale(1.2);
+    .kbd-boss-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.85));
+      animation: kbdHover 2.2s infinite ease-in-out;
     }
 
-    .combatant-kbd.hurt {
-      animation: kbdHurtAnim 0.35s ease;
+    @keyframes kbdHover {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-7px) scale(1.03); }
     }
 
+    .kbd-boss-wrapper.strike { transform: translateX(-70px) scale(1.2); }
+    .kbd-boss-wrapper.hurt { animation: kbdHurtAnim 0.35s ease; }
     @keyframes kbdHurtAnim {
-      0%, 100% { transform: scale(1); filter: brightness(1); }
-      50% { transform: scale(0.9) translateX(15px); filter: brightness(2.5) drop-shadow(0 0 30px #ffffff); }
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.92) translateX(18px); filter: brightness(3) drop-shadow(0 0 30px #ffffff); }
     }
 
-    /* Hitsplats */
     .hitsplat {
       position: absolute;
       width: 44px;
@@ -459,198 +646,80 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
+      font-size: 1.15rem;
       font-weight: bold;
       animation: hitFloat 0.85s forwards ease-out;
       pointer-events: none;
       box-shadow: 0 4px 10px rgba(0,0,0,0.85);
       z-index: 80;
     }
-
     .hitsplat.red { background: #dc2626; }
     .hitsplat.green { background: #16a34a; }
-    .hitsplat.blue { background: #0284c7; }
 
     @keyframes hitFloat {
       0% { transform: scale(0.3) translateY(0); opacity: 0; }
-      40% { transform: scale(1.25) translateY(-20px); opacity: 1; }
-      100% { transform: scale(1) translateY(-50px); opacity: 0; }
+      40% { transform: scale(1.25) translateY(-18px); opacity: 1; }
+      100% { transform: scale(1) translateY(-45px); opacity: 0; }
     }
 
-    /* Battle Actions Toolbar */
     .boss-actions-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
 
     .combat-action-btn {
-      font-family: inherit;
+      font-family: 'RuneScape-Plain-12', monospace;
       background: #7f1d1d;
       border: 3px solid #ef4444;
       border-radius: 6px;
       color: #ffffff;
-      padding: 12px 4px;
-      font-size: 0.62rem;
+      padding: 10px 4px;
+      font-size: 1.1rem;
       cursor: pointer;
       text-shadow: 2px 2px #000;
       box-shadow: 0 4px #450a0a;
     }
-
     .combat-action-btn:active:not([disabled]) {
       transform: translateY(2px);
       box-shadow: 0 2px #450a0a;
     }
+    .combat-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .combat-action-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* OSRS DRAMATIC DEATH SCREEN */
+    /* DEATH SCREEN */
     .death-screen {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(10, 0, 0, 0.96);
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
       text-align: center;
       z-index: 90;
       animation: deathFade 1.2s forwards;
     }
-
-    .death-screen.active {
-      display: flex;
-    }
-
+    .death-screen.active { display: flex; }
     @keyframes deathFade {
-      0% { background: rgba(220, 38, 38, 0.9); }
+      0% { background: rgba(220, 38, 38, 0.95); }
       100% { background: rgba(10, 0, 0, 0.96); }
     }
 
-    /* Victory Modal */
+    /* VICTORY MODAL */
     .victory-screen {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(11, 9, 7, 0.96);
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
       text-align: center;
       z-index: 70;
     }
-
-    .victory-screen.active {
-      display: flex;
-    }
-
-    /* On-Screen Touch Controller */
-    .controls-panel {
-      width: 100%;
-      max-width: 920px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 18px 4px 18px;
-      margin-top: 6px;
-    }
-
-    .dpad-container {
-      display: grid;
-      grid-template-columns: repeat(3, 56px);
-      grid-template-rows: repeat(3, 56px);
-      gap: 4px;
-    }
-
-    .dpad-btn {
-      background: #3b2d20;
-      border: 3px solid #63503b;
-      border-radius: 8px;
-      color: #facc15;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px #1c150e;
-      touch-action: none;
-    }
-
-    .dpad-btn:active {
-      background: #4d3c2b;
-      transform: translateY(2px);
-      box-shadow: 0 2px #1c150e;
-    }
-
-    .dpad-empty {
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      pointer-events: none;
-    }
-
-    .actions-container {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .touch-action-btn {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
-      border: 4px solid #ffffff;
-      color: #ffffff;
-      font-size: 0.95rem;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      text-shadow: 1px 1px #000;
-      touch-action: none;
-    }
-
-    .btn-a {
-      background: #15803d;
-      border-color: #22c55e;
-      box-shadow: 0 5px #14532d;
-    }
-
-    .btn-b {
-      background: #b91c1c;
-      border-color: #ef4444;
-      box-shadow: 0 5px #7f1d1d;
-    }
-
-    @media (max-width: 640px) {
-      .dpad-container {
-        grid-template-columns: repeat(3, 48px);
-        grid-template-rows: repeat(3, 48px);
-      }
-      .touch-action-btn {
-        width: 58px;
-        height: 58px;
-        font-size: 0.85rem;
-      }
-      .question-box { font-size: 0.62rem; }
-      .choice-btn { font-size: 0.58rem; padding: 8px 6px; }
-      .rpg-hud { font-size: 0.6rem; }
-      .combatant-kbd { font-size: 3.8rem; }
-      .combatant-hero { font-size: 2.8rem; }
-      .hp-bar-outer { width: 100px; }
-    }
+    .victory-screen.active { display: flex; }
   </style>
 </head>
 <body>
@@ -664,138 +733,189 @@
       <span class="hud-dragon" id="hudDragonStatus">BOSS: KBD DORMANT</span>
     </div>
 
-    <!-- 11 EQUIPMENT SLOTS BELT -->
-    <div class="gear-belt">
-      <span class="gear-label">GEAR:</span>
-      <div class="gear-slot" id="slot-0" title="1. Iron Chainbody">🦺</div>
-      <div class="gear-slot" id="slot-1" title="2. Steel Full Helm">🪖</div>
-      <div class="gear-slot" id="slot-2" title="3. Mithril Platelegs">👖</div>
-      <div class="gear-slot" id="slot-3" title="4. Adamant Kiteshield">🛡️</div>
-      <div class="gear-slot" id="slot-4" title="5. Rune Sword">⚔️</div>
-      <div class="gear-slot" id="slot-5" title="6. Dragon Dagger">🗡️</div>
-      <div class="gear-slot" id="slot-6" title="7. Dragon Scimitar">⚔️</div>
-      <div class="gear-slot" id="slot-7" title="8. Anti-Dragon Shield">🔰</div>
-      <div class="gear-slot" id="slot-8" title="9. Rune Chainmail">🥋</div>
-      <div class="gear-slot" id="slot-9" title="10. Fire Cape">🔥</div>
-      <div class="gear-slot" id="slot-10" title="11. Armadyl Godsword">✨</div>
-    </div>
+    <!-- MAIN DYNAMIC STAGE (Phone = Vertical, iPad/PC = Horizontal Grips) -->
+    <div class="main-stage-layout">
 
-    <!-- CANVAS VIEWPORT -->
-    <div class="canvas-container" id="gameCanvasContainer">
-      <div class="screen-flash-red" id="screenFlash"></div>
-      <canvas id="rpgCanvas" width="640" height="360"></canvas>
-
-      <!-- KBD REFUSAL TO FIGHT DIALOGUE -->
-      <div class="dragon-dialog" id="dragonRefusalDialog">
-        <div class="dragon-dialog-title">🐲 KING BLACK DRAGON SCOFFS AT YOU!</div>
-        <div class="dragon-dialog-text" id="dragonRefusalMsg">
-          "ROOOAAAR! You only possess <span id="refusalGearCount" style="color:#facc15;">0</span>/11 legendary armaments! King Black Dragon refuses to incinerate an under-equipped mortal! Conquer all 11 grammar guardians across the realm first!"
+      <!-- LEFT FLANK CONTROLLER (FOR IPAD / PC GRIP) -->
+      <div class="controls-panel-left" id="dpadWrapper">
+        <div class="dpad-container">
+          <div class="dpad-empty"></div>
+          <button class="dpad-btn" id="btnUp">▲</button>
+          <div class="dpad-empty"></div>
+          <button class="dpad-btn" id="btnLeft">◀</button>
+          <div class="dpad-empty"></div>
+          <button class="dpad-btn" id="btnRight">▶</button>
+          <div class="dpad-empty"></div>
+          <button class="dpad-btn" id="btnDown">▼</button>
+          <div class="dpad-empty"></div>
         </div>
-        <button class="action-confirm-btn" style="display:block; max-width:240px; margin-top:8px;" onclick="closeDragonDialog()">UNDERSTOOD ↵</button>
       </div>
 
-      <!-- TRIAL QUESTION MODAL (INFINITE TRIES) -->
-      <div class="modal-overlay" id="quizModal">
-        <div class="battle-header">
-          <span id="battleStageTitle">TRIAL #1: GUARDIAN</span>
-          <span style="color:#4ade80;">INFINITE TRIES ACTIVATED</span>
+      <!-- CENTER DISPLAY: GEAR BELT & OVERWORLD CANVAS -->
+      <div class="center-stage">
+        <!-- 11 EQUIPMENT SLOTS BELT -->
+        <div class="gear-belt">
+          <span class="gear-label">GEAR:</span>
+          <div class="gear-slot" id="slot-0" title="1. Iron Chainbody">🦺</div>
+          <div class="gear-slot" id="slot-1" title="2. Steel Full Helm">🪖</div>
+          <div class="gear-slot" id="slot-2" title="3. Mithril Platelegs">👖</div>
+          <div class="gear-slot" id="slot-3" title="4. Adamant Kiteshield">🛡️</div>
+          <div class="gear-slot" id="slot-4" title="5. Rune Sword">⚔️</div>
+          <div class="gear-slot" id="slot-5" title="6. Dragon Dagger">🗡️</div>
+          <div class="gear-slot" id="slot-6" title="7. Dragon Scimitar">⚔️</div>
+          <div class="gear-slot" id="slot-7" title="8. Anti-Dragon Shield">🔰</div>
+          <div class="gear-slot" id="slot-8" title="9. Rune Chainmail">🥋</div>
+          <div class="gear-slot" id="slot-9" title="10. Fire Cape">🔥</div>
+          <div class="gear-slot" id="slot-10" title="11. Armadyl Godsword">✨</div>
         </div>
 
-        <div class="enemy-card">
-          <div class="enemy-avatar" id="enemyEmoji">⚖️</div>
-          <div class="enemy-info">
-            <div class="enemy-name" id="enemyName">Scale Beast</div>
-            <div class="enemy-reward" id="enemyReward">Reward: Iron Chainbody (1/11)</div>
-            <div class="question-box" id="questionPrompt">Question loading...</div>
-          </div>
-        </div>
+        <div class="canvas-container" id="gameCanvasContainer">
+          <div class="screen-flash-red" id="screenFlash"></div>
+          <canvas id="rpgCanvas" width="640" height="360"></canvas>
 
-        <div class="options-grid" id="optionsGrid"></div>
-
-        <div class="explanation-card" id="explanationCard"></div>
-
-        <button class="action-confirm-btn" id="continueBtn" onclick="resumeOverworld()">REWARD CLAIMED! RESUME QUEST ➜</button>
-      </div>
-
-      <!-- DRAMATIC BOSS FIGHT: KING BLACK DRAGON -->
-      <div class="boss-arena" id="bossArena">
-        <div class="boss-hud-top">
-          <div class="hp-container">
-            <span style="color:#38bdf8;">HERO:</span>
-            <div class="hp-bar-outer">
-              <div class="hp-bar-inner" id="heroHpFill"></div>
+          <!-- KBD REFUSAL DIALOGUE -->
+          <div class="dragon-dialog" id="dragonRefusalDialog">
+            <div class="dragon-dialog-title">🐲 KING BLACK DRAGON SCOFFS AT YOU!</div>
+            <div class="dragon-dialog-text">
+              "ROOOAAAR! You only possess <span id="refusalGearCount" style="color:#facc15;">0</span>/11 legendary armaments! King Black Dragon refuses to incinerate an under-equipped mortal! Conquer all 11 grammar guardians across the realm first!"
             </div>
-            <span id="heroHpText" style="font-size:0.58rem; color:#ffffff;">99/99</span>
+            <button class="action-confirm-btn" style="display:block; max-width:260px; margin-top:6px;" onclick="closeDragonDialog()">UNDERSTOOD ↵</button>
           </div>
 
-          <div class="hp-container">
-            <span style="color:#ef4444;">KBD:</span>
-            <div class="hp-bar-outer">
-              <div class="hp-bar-inner" id="bossHpFill"></div>
+          <!-- QUESTION MODAL (INFINITE TRIES) -->
+          <div class="modal-overlay" id="quizModal">
+            <div class="battle-header">
+              <span id="battleStageTitle">TRIAL #1: GUARDIAN</span>
+              <span style="color:#4ade80;">INFINITE TRIES</span>
             </div>
-            <span id="bossHpText" style="font-size:0.58rem; color:#ffffff;">250/250</span>
+
+            <div class="enemy-card">
+              <div class="enemy-avatar" id="enemyEmoji">⚖️</div>
+              <div class="enemy-info">
+                <div class="enemy-name" id="enemyName">Scale Beast</div>
+                <div class="enemy-reward" id="enemyReward">Reward: Iron Chainbody (1/11)</div>
+                <div class="question-box" id="questionPrompt">Question loading...</div>
+              </div>
+            </div>
+
+            <div class="options-grid" id="optionsGrid"></div>
+            <div class="explanation-card" id="explanationCard"></div>
+            <button class="action-confirm-btn" id="continueBtn" onclick="resumeOverworld()">REWARD CLAIMED! RESUME QUEST ➜</button>
+          </div>
+
+          <!-- BOSS FIGHT: KING BLACK DRAGON -->
+          <div class="boss-arena" id="bossArena">
+            <div class="boss-hud-top">
+              <div class="hp-container">
+                <span style="color:#38bdf8;">HERO:</span>
+                <div class="hp-bar-outer">
+                  <div class="hp-bar-inner" id="heroHpFill"></div>
+                </div>
+                <span id="heroHpText" style="font-size:1rem; color:#ffffff;">99/99</span>
+              </div>
+
+              <div class="hp-container">
+                <span style="color:#ef4444;">KBD:</span>
+                <div class="hp-bar-outer">
+                  <div class="hp-bar-inner" id="bossHpFill"></div>
+                </div>
+                <span id="bossHpText" style="font-size:1rem; color:#ffffff;">250/250</span>
+              </div>
+            </div>
+
+            <div class="boss-combat-stage" id="bossStage">
+              <div class="combatant-hero" id="heroFighter">🧙‍♂️</div>
+              <div class="kbd-boss-wrapper" id="kbdFighter">
+                <img 
+                  id="kbdFighterImg" 
+                  class="kbd-boss-img" 
+                  src="kbd.png" 
+                  onerror="this.onerror=null; this.src='https://oldschool.runescape.wiki/images/thumb/King_Black_Dragon.png/320px-King_Black_Dragon.png';" 
+                  alt="King Black Dragon" 
+                />
+              </div>
+            </div>
+
+            <div class="boss-actions-grid">
+              <button class="combat-action-btn" id="btnAtk1" onclick="playerCombatAction('GODSWORD', 65)">✨ GODSWORD SPEC</button>
+              <button class="combat-action-btn" id="btnAtk2" onclick="playerCombatAction('SCIMITAR', 40)">⚔️ D-SCIMITAR</button>
+              <button class="combat-action-btn" id="btnHeal" onclick="playerCombatAction('SHARK', 0)">🦈 EAT SHARK (+35)</button>
+            </div>
+          </div>
+
+          <!-- DRAMATIC OSRS DEATH SCREEN -->
+          <div class="death-screen" id="deathScreen">
+            <div style="font-size: 2.8rem; margin-bottom: 10px;">💀</div>
+            <h2 style="color: #ef4444; font-size: 1.4rem; margin-bottom: 10px; letter-spacing: 1px;">OH DEAR, YOU ARE DEAD!</h2>
+            <p style="font-size: 1.2rem; line-height: 1.55; color: #fed7aa; max-width: 480px; margin-bottom: 18px;">
+              You were incinerated by the King Black Dragon's cataclysmic dragonfire breath!
+            </p>
+            <button class="action-confirm-btn" style="display:block; max-width: 280px;" onclick="respawnHero()">RESPAWN & RETRY KBD 🔄</button>
+          </div>
+
+          <!-- VICTORY FINAL BANNER -->
+          <div class="victory-screen" id="victoryScreen">
+            <div style="font-size: 3.2rem; margin-bottom: 8px;">🏆</div>
+            <h2 style="color: #facc15; font-size: 1.4rem; margin-bottom: 8px;">KING BLACK DRAGON SLAIN!</h2>
+            <p style="font-size: 1.2rem; line-height: 1.55; color: #fed7aa; max-width: 480px; margin-bottom: 16px;">
+              Equipped with all 11 legendary armaments, you conquered every comparison rule and banished the King Black Dragon!
+            </p>
+            <button class="action-confirm-btn" style="display:block; max-width: 260px;" onclick="resetAll()">PLAY AGAIN 🔄</button>
           </div>
         </div>
-
-        <div class="boss-combat-stage" id="bossStage">
-          <div class="combatant-hero" id="heroFighter">🧙‍♂️</div>
-          <div class="combatant-kbd" id="kbdFighter">🐲</div>
-        </div>
-
-        <div class="boss-actions-grid">
-          <button class="combat-action-btn" id="btnAtk1" onclick="playerCombatAction('GODSWORD', 65)">✨ GODSWORD SPEC</button>
-          <button class="combat-action-btn" id="btnAtk2" onclick="playerCombatAction('SCIMITAR', 40)">⚔️ D-SCIMITAR</button>
-          <button class="combat-action-btn" id="btnHeal" onclick="playerCombatAction('SHARK', 0)">🦈 EAT SHARK (+35 HP)</button>
-        </div>
       </div>
 
-      <!-- DRAMATIC OSRS DEATH SCREEN -->
-      <div class="death-screen" id="deathScreen">
-        <div style="font-size: 3rem; margin-bottom: 12px;">💀</div>
-        <h2 style="color: #ef4444; font-size: 1.15rem; margin-bottom: 12px; letter-spacing: 1px;">OH DEAR, YOU ARE DEAD!</h2>
-        <p style="font-size: 0.68rem; line-height: 1.6; color: #fed7aa; max-width: 480px; margin-bottom: 20px;">
-          You were consumed by the King Black Dragon's cataclysmic dragonfire breath!
-        </p>
-        <button class="action-confirm-btn" style="display:block; max-width: 260px;" onclick="respawnHero()">RESPAWN & RETRY KBD 🔄</button>
-      </div>
-
-      <!-- VICTORY FINAL BANNER -->
-      <div class="victory-screen" id="victoryScreen">
-        <div style="font-size: 3.5rem; margin-bottom: 8px;">🏆</div>
-        <h2 style="color: #facc15; font-size: 1.1rem; margin-bottom: 10px;">KING BLACK DRAGON SLAIN!</h2>
-        <p style="font-size: 0.68rem; line-height: 1.6; color: #fed7aa; max-width: 480px; margin-bottom: 18px;">
-          Equipped with all 11 legendary weapons and armours, you vanquished the King Black Dragon and cleansed the realm!
-        </p>
-        <button class="action-confirm-btn" style="display:block; max-width: 260px;" onclick="resetAll()">PLAY AGAIN 🔄</button>
+      <!-- RIGHT FLANK CONTROLLER (FOR IPAD / PC GRIP) -->
+      <div class="controls-panel-right" id="actionsWrapper">
+        <div class="actions-container">
+          <button class="touch-action-btn btn-b" id="btnB">RUN</button>
+          <button class="touch-action-btn btn-a" id="btnA">⚔️ A</button>
+        </div>
       </div>
 
     </div>
 
-    <!-- TOUCH CONTROLLER FOR IPAD -->
-    <div class="controls-panel">
-      <!-- D-Pad -->
-      <div class="dpad-container">
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" id="btnUp">▲</button>
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" id="btnLeft">◀</button>
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" id="btnRight">▶</button>
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" id="btnDown">▼</button>
-        <div class="dpad-empty"></div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="actions-container">
-        <button class="touch-action-btn btn-b" id="btnB">RUN</button>
-        <button class="touch-action-btn btn-a" id="btnA">⚔️ A</button>
-      </div>
-    </div>
+    <!-- PHONE PORTRAIT CONTROLS CONTAINER -->
+    <div class="controls-panel" id="mobileBottomControls"></div>
 
   </div>
 
   <script>
+    /* =========================================================
+       DYNAMIC UI ADAPTATION: PHONE VERTICAL VS IPAD/PC HORIZONTAL
+       ========================================================= */
+    const mobileBottomControls = document.getElementById("mobileBottomControls");
+    const dpadWrapper = document.getElementById("dpadWrapper");
+    const actionsWrapper = document.getElementById("actionsWrapper");
+    const dpadContainer = document.querySelector(".dpad-container");
+    const actionsContainer = document.querySelector(".actions-container");
+
+    function adaptLayoutOrientation() {
+      const isMobilePortrait = window.innerWidth < 768 && window.innerHeight >= window.innerWidth;
+
+      if (isMobilePortrait) {
+        if (!mobileBottomControls.contains(dpadContainer)) {
+          mobileBottomControls.appendChild(dpadContainer);
+          mobileBottomControls.appendChild(actionsContainer);
+          mobileBottomControls.style.display = "flex";
+          dpadWrapper.style.display = "none";
+          actionsWrapper.style.display = "none";
+        }
+      } else {
+        if (!dpadWrapper.contains(dpadContainer)) {
+          dpadWrapper.appendChild(dpadContainer);
+          actionsWrapper.appendChild(actionsContainer);
+          mobileBottomControls.style.display = "none";
+          dpadWrapper.style.display = "flex";
+          actionsWrapper.style.display = "flex";
+        }
+      }
+    }
+
+    window.addEventListener("resize", adaptLayoutOrientation);
+    window.addEventListener("orientationchange", adaptLayoutOrientation);
+    adaptLayoutOrientation();
+
     /* =========================================================
        AUDIO SYNTHESIZER (8-BIT SOUND EFFECTS)
        ========================================================= */
@@ -977,7 +1097,7 @@
     ];
 
     /* =========================================================
-       OVERWORLD MAP & GUARDIAN PLACEMENTS
+       OVERWORLD MAP & STATE
        ========================================================= */
     const canvas = document.getElementById("rpgCanvas");
     const ctx = canvas.getContext("2d");
@@ -1011,7 +1131,6 @@
       stepAnim: 0
     };
 
-    // 11 Guardians distributed along paths
     const guardianPositions = [
       { col: 4, row: 1 },
       { col: 7, row: 3 },
@@ -1027,6 +1146,13 @@
     ];
 
     const kbdOverworld = { col: 12.5, row: 1.5 };
+
+    const kbdOverworldImg = new Image();
+    kbdOverworldImg.crossOrigin = "anonymous";
+    kbdOverworldImg.src = "kbd.png";
+    kbdOverworldImg.onerror = () => {
+      kbdOverworldImg.src = "https://oldschool.runescape.wiki/images/thumb/King_Black_Dragon.png/320px-King_Black_Dragon.png";
+    };
 
     let defeatedGuardians = new Set();
     let currentEncounter = null;
@@ -1096,7 +1222,7 @@
     }
 
     /* =========================================================
-       QUIZ MODAL LOGIC (INFINITE TRIES)
+       QUIZ MODAL LOGIC
        ========================================================= */
     const quizModal = document.getElementById("quizModal");
     const optionsGrid = document.getElementById("optionsGrid");
@@ -1141,7 +1267,6 @@
         const allBtns = optionsGrid.querySelectorAll(".choice-btn");
         allBtns.forEach(b => b.disabled = true);
 
-        // Unlock Item
         defeatedGuardians.add(currentEncounter);
         document.getElementById(`slot-${currentEncounter}`).classList.add("unlocked");
         document.getElementById("hudGearCount").textContent = `ARMAMENTS: ${defeatedGuardians.size} / 11`;
@@ -1170,7 +1295,7 @@
     }
 
     /* =========================================================
-       DRAMATIC KBD BOSS BATTLE ENGINE WITH LETHAL COMBAT
+       BOSS COMBAT SYSTEM
        ========================================================= */
     const bossArena = document.getElementById("bossArena");
     const container = document.getElementById("gameCanvasContainer");
@@ -1204,7 +1329,7 @@
       container.classList.add("screen-shake");
 
       flashRed.classList.add("active");
-      setTimeout(() => flashRed.classList.remove("active"), 180);
+      setTimeout(() => flashRed.classList.remove("active"), 190);
     }
 
     function spawnHitsplatOn(targetEl, damage, type = 'red') {
@@ -1215,43 +1340,46 @@
       const splat = document.createElement("div");
       splat.className = `hitsplat ${type}`;
       splat.textContent = damage;
-      splat.style.left = `${rect.left - stageRect.left + rect.width / 2 - 22}px`;
+      splat.style.left = `${rect.left - stageRect.left + rect.width / 2 - 21}px`;
       splat.style.top = `${rect.top - stageRect.top + 10}px`;
       stage.appendChild(splat);
 
       setTimeout(() => splat.remove(), 900);
     }
 
-    function spawnDragonfireParticles() {
+    function spawnDragonfireParticles(attackMode = 'FIRE') {
       const stage = document.getElementById("bossStage");
       const kbdEl = document.getElementById("kbdFighter");
       const kbdRect = kbdEl.getBoundingClientRect();
       const stageRect = stage.getBoundingClientRect();
 
-      const fireColors = ["#ef4444", "#f97316", "#facc15", "#38bdf8", "#a855f7", "#ffffff"];
+      let palette = ["#ef4444", "#f97316", "#facc15", "#ffffff"];
+      if (attackMode === 'POISON') palette = ["#16a34a", "#22c55e", "#86efac", "#a3e635"];
+      else if (attackMode === 'ICE') palette = ["#0284c7", "#38bdf8", "#bae6fd", "#c084fc", "#ffffff"];
 
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 48; i++) {
         const p = document.createElement("div");
         p.style.position = "absolute";
-        const size = Math.random() * 16 + 8;
+        const size = Math.random() * 18 + 8;
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
         p.style.borderRadius = "50%";
-        p.style.background = fireColors[Math.floor(Math.random() * fireColors.length)];
-        p.style.left = `${kbdRect.left - stageRect.left + 20}px`;
-        p.style.top = `${kbdRect.top - stageRect.top + 30}px`;
-        p.style.boxShadow = `0 0 14px ${p.style.background}`;
+        p.style.background = palette[Math.floor(Math.random() * palette.length)];
+        
+        p.style.left = `${kbdRect.left - stageRect.left + 35}px`;
+        p.style.top = `${kbdRect.top - stageRect.top + 45 + (Math.random() * 40 - 20)}px`;
+        p.style.boxShadow = `0 0 16px ${p.style.background}`;
         p.style.pointerEvents = "none";
         p.style.zIndex = "85";
         p.style.transition = `all ${Math.random() * 0.35 + 0.35}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
         stage.appendChild(p);
 
         setTimeout(() => {
-          const destX = kbdRect.left - stageRect.left - (Math.random() * 260 + 100);
-          const destY = kbdRect.top - stageRect.top + (Math.random() * 120 - 60);
+          const destX = kbdRect.left - stageRect.left - (Math.random() * 260 + 130);
+          const destY = kbdRect.top - stageRect.top + (Math.random() * 140 - 70);
           p.style.left = `${destX}px`;
           p.style.top = `${destY}px`;
-          p.style.transform = `scale(${Math.random() * 2 + 1.5})`;
+          p.style.transform = `scale(${Math.random() * 2.2 + 1.8})`;
           p.style.opacity = "0";
         }, 20);
 
@@ -1274,18 +1402,15 @@
       const kbdEl = document.getElementById("kbdFighter");
 
       if (actionType === 'SHARK') {
-        // Healing move
         soundEatShark();
         playerHP = Math.min(PLAYER_MAX_HP, playerHP + 35);
         updateCombatUI();
         spawnHitsplatOn(heroEl, 35, 'green');
 
-        // KBD Counterattacks after heal
         setTimeout(kbdCounterAttack, 700);
         return;
       }
 
-      // Attack Move
       soundSlash();
       heroEl.classList.add("strike");
       setTimeout(() => heroEl.classList.remove("strike"), 180);
@@ -1317,13 +1442,14 @@
       kbdEl.classList.add("strike");
       setTimeout(() => kbdEl.classList.remove("strike"), 220);
 
-      // Huge multi-color dragonfire surge
-      spawnDragonfireParticles();
+      const breathTypes = ['FIRE', 'POISON', 'ICE'];
+      const chosenBreath = breathTypes[Math.floor(Math.random() * breathTypes.length)];
+
+      spawnDragonfireParticles(chosenBreath);
       triggerScreenEffects();
 
       setTimeout(() => {
-        // Dragon hits player with lethal damage (25 to 48 damage!)
-        const dragonDamage = Math.floor(Math.random() * 24 + 25);
+        const dragonDamage = Math.floor(Math.random() * 23 + 26);
         playerHP = Math.max(0, playerHP - dragonDamage);
         updateCombatUI();
 
@@ -1332,7 +1458,6 @@
         setTimeout(() => heroEl.classList.remove("burned"), 500);
 
         if (playerHP <= 0) {
-          // Player is incinerated and died!
           setTimeout(playerDied, 600);
         } else {
           isCombatLocked = false;
@@ -1352,7 +1477,6 @@
       document.getElementById("deathScreen").classList.remove("active");
       isCombatLocked = false;
       toggleCombatButtons(false);
-      // Respawn near KBD lair entrance with refreshed HP
       player.x = 10 * TILE_SIZE;
       player.y = 3 * TILE_SIZE;
     }
@@ -1385,7 +1509,7 @@
     }
 
     /* =========================================================
-       OVERWORLD RENDERING
+       CANVAS RENDERING
        ========================================================= */
     function drawOverworld() {
       for (let r = 0; r < MAP_ROWS; r++) {
@@ -1425,30 +1549,35 @@
         }
       }
 
-      // Draw King Black Dragon in Lair
+      // KBD in Caldera
       const kbdPixelX = kbdOverworld.col * TILE_SIZE;
       const kbdPixelY = kbdOverworld.row * TILE_SIZE;
-      const breathing = Math.sin(Date.now() / 300) * 3;
+      const breathing = Math.sin(Date.now() / 320) * 3;
 
-      ctx.fillStyle = "rgba(239, 68, 68, 0.28)";
+      ctx.fillStyle = "rgba(239, 68, 68, 0.32)";
       ctx.beginPath();
-      ctx.arc(kbdPixelX + 40, kbdPixelY + 36, 52, 0, Math.PI * 2);
+      ctx.arc(kbdPixelX + 44, kbdPixelY + 36, 52, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.font = "46px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("🐲", kbdPixelX + 40, kbdPixelY + 32 + breathing);
+      if (kbdOverworldImg.complete && kbdOverworldImg.naturalWidth > 0) {
+        ctx.drawImage(kbdOverworldImg, kbdPixelX, kbdPixelY + breathing, 90, 68);
+      } else {
+        ctx.font = "44px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🐲", kbdPixelX + 44, kbdPixelY + 32 + breathing);
+      }
 
       ctx.fillStyle = "#000000";
-      ctx.fillRect(kbdPixelX + 2, kbdPixelY - 12 + breathing, 76, 14);
+      ctx.fillRect(kbdPixelX + 4, kbdPixelY - 14 + breathing, 80, 16);
       ctx.strokeStyle = "#dc2626";
-      ctx.strokeRect(kbdPixelX + 2, kbdPixelY - 12 + breathing, 76, 14);
+      ctx.strokeRect(kbdPixelX + 4, kbdPixelY - 14 + breathing, 80, 16);
       ctx.fillStyle = "#ef4444";
-      ctx.font = "7px 'Press Start 2P', monospace";
-      ctx.fillText("KBD (BOSS)", kbdPixelX + 40, kbdPixelY - 5 + breathing);
+      ctx.font = "1.05rem 'RuneScape-Plain-12', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("KBD (BOSS)", kbdPixelX + 44, kbdPixelY - 4 + breathing);
 
-      // Draw 11 Guardians
+      // Guardians
       ctx.font = "18px sans-serif";
       guardianPositions.forEach((g, idx) => {
         const gx = g.col * TILE_SIZE + TILE_SIZE / 2;
@@ -1464,27 +1593,27 @@
           ctx.fillText(questions[idx].emoji, gx, gy + floatBob);
 
           ctx.fillStyle = "#000000";
-          ctx.fillRect(gx - 10, gy - 20 + floatBob, 20, 11);
+          ctx.fillRect(gx - 10, gy - 20 + floatBob, 20, 12);
           ctx.strokeStyle = "#facc15";
-          ctx.strokeRect(gx - 10, gy - 20 + floatBob, 20, 11);
+          ctx.strokeRect(gx - 10, gy - 20 + floatBob, 20, 12);
           ctx.fillStyle = "#ffffff";
-          ctx.font = "8px 'Press Start 2P', monospace";
-          ctx.fillText(`${idx + 1}`, gx, gy - 14 + floatBob);
+          ctx.font = "1.05rem 'RuneScape-Plain-12', monospace";
+          ctx.fillText(`${idx + 1}`, gx, gy - 12 + floatBob);
           ctx.font = "18px sans-serif";
         }
       });
 
-      // Draw Hero
+      // Player Hero
       const px = player.x;
       const py = player.y;
 
-      ctx.fillStyle = defeatedGuardians.has(9) ? "#f97316" : "#b91c1c"; // Fire Cape
+      ctx.fillStyle = defeatedGuardians.has(9) ? "#f97316" : "#b91c1c";
       ctx.fillRect(px + 4, py + 10, 16, 14);
 
       ctx.fillStyle = defeatedGuardians.has(8) ? "#38bdf8" : (defeatedGuardians.has(0) ? "#94a3b8" : "#2563eb");
       ctx.fillRect(px + 5, py + 8, 14, 13);
 
-      ctx.fillStyle = defeatedGuardians.has(1) ? "#cbd5e1" : "#94a3b8"; // Steel Helm
+      ctx.fillStyle = defeatedGuardians.has(1) ? "#cbd5e1" : "#94a3b8";
       ctx.fillRect(px + 6, py + 1, 12, 10);
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(px + 8, py + 5, 8, 3);
@@ -1494,33 +1623,31 @@
       ctx.fillRect(px + 6, py + 21, 4, 6 + legAnim);
       ctx.fillRect(px + 14, py + 21, 4, 6 - legAnim);
 
-      // Weapon
       if (defeatedGuardians.has(10)) {
-        ctx.fillStyle = "#facc15"; // Armadyl Godsword
+        ctx.fillStyle = "#facc15";
         ctx.fillRect(px + 19, py + 2, 4, 18);
       } else if (defeatedGuardians.has(6)) {
-        ctx.fillStyle = "#dc2626"; // Dragon Scimitar
+        ctx.fillStyle = "#dc2626";
         ctx.fillRect(px + 19, py + 6, 3, 14);
       } else if (defeatedGuardians.has(4)) {
-        ctx.fillStyle = "#38bdf8"; // Rune Sword
+        ctx.fillStyle = "#38bdf8";
         ctx.fillRect(px + 19, py + 6, 2, 13);
       } else {
         ctx.fillStyle = "#d97706";
         ctx.fillRect(px + 19, py + 8, 2, 10);
       }
 
-      // Shield
       if (defeatedGuardians.has(7)) {
-        ctx.fillStyle = "#f97316"; // Anti-Dragon Shield
+        ctx.fillStyle = "#f97316";
         ctx.fillRect(px + 1, py + 9, 4, 10);
       } else if (defeatedGuardians.has(3)) {
-        ctx.fillStyle = "#15803d"; // Adamant Kiteshield
+        ctx.fillStyle = "#15803d";
         ctx.fillRect(px + 1, py + 9, 4, 10);
       }
     }
 
     /* =========================================================
-       MAIN GAME LOOP
+       MAIN LOOP & CONTROLS
        ========================================================= */
     function gameLoop() {
       if (!inBattle && !inBossBattle) {
@@ -1551,9 +1678,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    /* =========================================================
-       CONTROLLER & INPUT BINDINGS
-       ========================================================= */
     window.addEventListener("keydown", (e) => {
       initAudio();
       if (e.code === "ArrowUp" || e.code === "KeyW") keys.up = true;
